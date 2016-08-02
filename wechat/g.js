@@ -6,8 +6,8 @@ var getRawBody = require('raw-body') ;
 var sha1 = require('sha1') ; 
 var Wechat = require('./wechat') ; 
 var util = require('./util') ; 
-module.exports = function(config){
-	//var wechat = new Wechat(config) ; 
+module.exports = function(config , handler){
+	var wechat = new Wechat(config) ; 
 	return function *(next){
 			var that = this ; 
 			var token = config.wechat.token ; 
@@ -15,7 +15,7 @@ module.exports = function(config){
 			var timestamp = this.query.timestamp ; 
 			var nonce = this.query.nonce ; 
 			var echostr = this.query.echostr ; 
-			var str = [token, timestamp, nonce].sort().join('') ; 
+			var str = [token, timestamp, nonce].sort().join('') ;
 			var validatedStr = sha1(str) ; 
 			if (this.method == 'GET') {
 				if(signature == validatedStr){
@@ -38,24 +38,12 @@ module.exports = function(config){
 				//将XML转换成一个嵌套的对象
 				var content = yield util.parseXMLAsync(data) ; 
 				var message = util.formatMessage(content.xml) ;
-				console.log(message);
-
-				if(message.MsgType == 'event') {
-					if(message.Event == 'subscribe') {
-						var now = new Date().getTime() ; 
-						that.status = 200 ; 
-						that.type = 'application/xml' ; 
-						that.body = '<xml>'+
-								 '<ToUserName><![CDATA['+ message.FromUserName + ' ]]></ToUserName>' + 
-								 '<FromUserName><![CDATA['+ message.ToUserName + ']]>' + '</FromUserName>' + 
-								 '<CreateTime>'+ now +'</CreateTime>' + 
-								 '<MsgType><![CDATA[text]]></MsgType>' + 
-								 '<Content><![CDATA[HI welcom , xiaoyuervae]]></Content>' + 
-							 '</xml>' ; 
-						console.log(that.body);
-						return ;
-					}
-				}
+				this.weixin = message ; 
+				// 把控制权交出去，交给业务层，让它决定接下来需要做什么
+				// 暂停这里，走向外层逻辑
+				yield handler.call(this , next) ; 
+				// 调用reply方法
+				wechat.reply.call(this) ; 
 			}
 		}
 }
