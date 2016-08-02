@@ -87,7 +87,70 @@ exports.reply = function* (next) {
 				type: 'image' , 
 				mediaId : data.media_id 
 			}
+		}else if (content == '10') {
+			var picData = yield wechatApi.uploadMaterial('image' , __dirname + '/4.jpg' , {}) ; 
+			console.log('picData是：') ;
+			console.log(picData) ; 
+			var media = {
+				articles: [{
+					title: 'xiaoyuervae' , 
+					thumb_media_id: picData.media_id ,
+					author: 'xiaoyuervae' ,
+					digest: '没有相关的摘要' ,
+					show_cover_pic: 1 , 
+					content: '没有内容' ,
+					content_source_url: 'http://github.com'
+				}]
+			}
+			data = yield wechatApi.uploadMaterial('news' , media , {}) ; 
+			console.log('上传之后的data是:\n') ; 
+			console.log(data) ; 
+			data = yield wechatApi.fetchMaterial(data.media_id) ;
+			console.log('fetch之后的data是:\n') ; 
+			console.log(data) ; 
+			console.log(JSON.stringify(data)) ;
+			var items = data.news_item ; 
+			console.log('这里的items是: ');
+			console.log(items) ; 
+			var news = [] ; 
+			items.forEach(function(item) {
+				news.push({
+					title: item.title , 
+					description: item.digest , 
+					picUrl: picData.url , 
+					url: item.url
+				})
+			}) 
+			reply = news ; 
+		} else if (content == '11') {
+			var count = yield wechatApi.fetchMaterialCount() ;
+			console.log(JSON.stringify(count)) ; 
+			var results = [
+				wechatApi.batchMaterial({
+					type: 'image' , 
+					offset: 0 , 
+					count: 10
+				}) , 
+				wechatApi.batchMaterial({
+					type: 'video' , 
+					offset: 0 , 
+					count: 10
+				}) , 
+				wechatApi.batchMaterial({
+					type: 'voice' , 
+					offset: 0 , 
+					count: 10
+				}) , 
+				wechatApi.batchMaterial({
+					type: 'news' , 
+					offset: 0 , 
+					count: 10
+				}) 
+			]
+			console.log(results) ;
+			reply = 1 ; 
 		}
+
 		this.body = reply ; 
 	}
 	yield next ; 
