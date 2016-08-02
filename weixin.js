@@ -81,6 +81,12 @@ exports.reply = function* (next) {
 				musicUrl: 'http://music.163.com/#/m/song?id=27836147' , 
 				thumMediaId: data.media_id 
 			}
+		}else if (content == '9') {
+			var data = yield wechatApi.uploadMaterial('image' , __dirname + '/4.jpg' , {type: 'image'})
+			reply = {
+				type: 'image' , 
+				mediaId : data.media_id 
+			}
 		}
 		this.body = reply ; 
 	}

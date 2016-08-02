@@ -1,12 +1,20 @@
 'use strict'
 var Promise = require('bluebird') ; 
+var _ = require('lodash') ; 
 var fs = require('fs') ;
 var request = Promise.promisify(require('request')) ; 
 var util = require('./util') ; 
 var prefix = 'https://api.weixin.qq.com/cgi-bin/' ; 
 var api = {
 	accesToken: prefix + 'token?grant_type=client_credential' , 
-	upload: prefix + 'media/upload?'
+	temporary: {
+		upload: prefix + 'media/upload?'
+	} , 
+	permanent: {
+		upload: prefix + 'material/add_material?' , 
+		uploadNews: prefix + 'material/add_news?' , 
+		uploadImg: prefix + 'media/uploadimg?'  
+	}
 }
 
 function Wechat(config){
@@ -78,10 +86,23 @@ Wechat.prototype.updateAccessToken = function() {
 	})
 }
 
-Wechat.prototype.uploadMaterial = function(type , filePath) {
+Wechat.prototype.uploadMaterial = function(type , material , permanent) {
 	var that = this ; 
-	var form = {
-		media: fs.createReadStream(filePath)
+	var uploadUrl = api.temporary.upload ; 
+	var form = {} ;
+	if (permanent) {
+		uploadUrl = api.permanent.upload ;
+		_.extend(form , permanent) ; 
+	}
+	if (type == 'img') {
+		uploadUrl = api.permanent.uploadImg ; 
+	}
+	else if (type == 'news') {
+		uploadUrl = api.permanent.uploadNews ;
+		form: material ; 
+	}
+	else {
+		form.media = fs.createReadStream(material); ; 
 	}
 	var appID = this.appID ; 
 	var appSecret = this.appSecret ; 
@@ -89,8 +110,27 @@ Wechat.prototype.uploadMaterial = function(type , filePath) {
 		that
 			.fetchAccessToken()
 			.then(function(data) {
-				var url = api.upload + '&access_token=' + data.access_token + '&type=' + type ; 
-				request({method: 'POST' , url: url , formData: form , json: true}).then(function(response) {
+				var url = uploadUrl + 'access_token=' + data.access_token ;
+				if (!permanent) {
+					url += '&type=' + type ;
+				} else {
+					form.access_token = data.access_token ; 
+				}
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true
+				} 
+				if (type == 'news') {
+					options.body = form ; 
+				}
+				else {
+					options.formData = form ; 
+				}
+
+				console.log('上传时的url是:') ; 
+				console.log(url) ; 
+				request(options).then(function(response) {
 					var _data = response.body ; 
 					if (_data) {
 						resolve(_data) ; 
@@ -99,10 +139,11 @@ Wechat.prototype.uploadMaterial = function(type , filePath) {
 					}
 				})
 			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
 	})
-	.catch(function(err) {
-		reject(err) ; 
-	})
+	
 }
 
 Wechat.prototype.reply = function() {
