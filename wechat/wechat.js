@@ -20,6 +20,20 @@ var api = {
 		update: prefix + 'material/update_news?' , 
 		count: prefix + 'material/get_materialcount?' , 
 		batch: prefix + 'material/batchget_material?'
+	} ,
+	tag: {
+		create: prefix + 'tags/create?' ,
+		get: prefix + 'tags/get?' ,
+		update: prefix + 'tags/update?' ,
+		delete: prefix + 'tags/delete?' ,
+		batchTagging: prefix + 'tags/members/batchtagging?' ,
+		getdlist: prefix + 'tags/getidlist?'
+	} ,
+	user: {
+		remark: prefix + 'user/info/updateremark?' , 
+		fetch: prefix + 'user/info?' , 
+		batchFetch: prefix + 'user/info/batchget?' , 
+		list: prefix + 'user/get?' 
 	}
 }
 
@@ -283,6 +297,7 @@ Wechat.prototype.batchMaterial = function(form) {
 	form.type = form.type || 'image'  ; 
 	form.offset = form.offset || 0 ; 
 	form.count = form.count || 1 ; 
+	var batchUrl = api.permanent.batch ; 
 	return new Promise(function(resolve , reject) {
 		that
 			.fetchAccessToken()
@@ -302,6 +317,341 @@ Wechat.prototype.batchMaterial = function(form) {
 						resolve(_data) ; 
 					}else {
 						throw new Error('batch material fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+/*
+用户标签管理
+ */
+
+Wechat.prototype.createTag = function(name) {
+	var that = this ; 
+	var form = {
+		tag: {
+			name: name
+		}
+	}
+	var createUrl = api.tag.create ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = createUrl + 'access_token=' + data.access_token ; 
+				
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form 
+				} 
+			
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('create TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.getTags = function() {
+	var that = this ; 
+	var getUrl = api.tag.get ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = getUrl + 'access_token=' + data.access_token ; 
+				
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true 
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('get TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.updateTag = function(tag) {
+	var that = this ; 
+	var updateUrl = api.tag.update ; 
+	var form = {
+		tag: tag
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = updateUrl + 'access_token=' + data.access_token ; 
+				
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('update TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.deleteTag = function(tag) {
+	var that = this ; 
+	var deleteUrl = api.tag.delete ; 
+	var form = {
+		tag: tag
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = deleteUrl + 'access_token=' + data.access_token ; 
+				
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('delete TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+
+Wechat.prototype.batchTagging = function(tagid , next_openid) {
+	var that = this ; 
+	var batchTaggingUrl = api.tag.batchtagging ; 
+	var form = {
+		tagid: tagid , 
+		next_openid: next_openid 
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = batchTaggingUrl + 'access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('batchTagging TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.moveTag = function(openid_list , tagid) {
+	var that = this ; 
+	var moveUrl = api.tag.batchtagging ; 
+	var form = {
+		openid_list: openid_list , 
+		tagid: tagid
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = moveUrl + 'access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('move TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.getTagByUserId = function(openid) {
+	var that = this ; 
+	var getdlistUrl = api.tag.getdlist ; 
+	var form = {
+		openid: openid
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = getdlistUrl + 'access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('getdlist TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.remarkUser = function(openId , remark) {
+	var that = this ; 
+	var remarkUrl = api.user.remark ; 
+	var form = {
+		openid: openId , 
+		remark: remark
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = remarkUrl + 'access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('getdlist TAG fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.fetchUsersInfo = function(openIds , lang) {
+	var that = this ; 
+	var fetchUrl = api.user.batchFetch ;
+	lang = lang || 'zh_CN' ; 
+	
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var options = {
+					json: true 
+				} 
+				if(_.isArray(openIds)) {
+					options.url = fetchUrl + 'access_token=' + data.access_token ; 
+					options.body = {
+						user_list: openIds
+					}
+					options.method = 'POST' ; 
+				} else {
+					options.url = api.user.fetch + 'access_token=' + data.access_token + '&openid=' + openIds + '&lang=' + lang ; 
+				}
+				console.log(options) ; 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('fetch USERS fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.listUsers = function(openId) {
+	var that = this ; 
+	var listUrl = api.user.list ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = listUrl + 'access_token=' + data.access_token ; 
+				if (openId) {
+					url += '&next_openid=' + openId ;
+				}
+				var options = {
+					method: 'GET' ,
+					url: url , 
+					json: true ,
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('list Users fails') ; 
 					}
 				})
 			})

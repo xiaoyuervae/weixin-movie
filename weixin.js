@@ -150,6 +150,35 @@ exports.reply = function* (next) {
 			console.log(results) ;
 			reply = 1 ; 
 		}
+		else if (content == '12'){
+			var tag = yield wechatApi.createTag('ggg') ; 
+			console.log('新标签：') ;
+			console.log(tag) ; 
+			var tags = yield wechatApi.getTags() ; 
+			console.log('加入了xiaoyuervae 之后的标签：') ;
+			console.log(tags) ; 
+
+			var tag1 = yield wechatApi.getTagByUserId(message.FromUserName) ; 
+			console.log(tag1) ;
+
+			reply = 'tags done' ;
+		}
+		else if (content == '13'){
+			console.log('fromusernameshi:' + message.FromUserName) ; 
+			var user = yield wechatApi.fetchUsersInfo(message.FromUserName , 'zh_TW') ; 
+			console.log(JSON.stringify(user)) ;
+
+			var users = yield wechatApi.fetchUsersInfo([{openid:message.FromUserName , lang: 'en'}])
+			console.log(users);
+
+			reply = JSON.stringify(user) ;
+		}
+		else if (content == '14'){
+			var users = yield wechatApi.listUsers() ;
+			console.log(users); 
+			reply = JSON.stringify(users) ;  
+		}
+
 
 		this.body = reply ; 
 	}
