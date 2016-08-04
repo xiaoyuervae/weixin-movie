@@ -34,6 +34,20 @@ var api = {
 		fetch: prefix + 'user/info?' , 
 		batchFetch: prefix + 'user/info/batchget?' , 
 		list: prefix + 'user/get?' 
+	} , 
+	mass: { 
+		sendByTag: prefix + 'message/mass/sendall?' ,
+		//根据openId向用户发送消息，订阅号不可用，服务号才可用
+		sendByOpenId: prefix + 'message/mass/send?' , 
+		del: prefix + 'message/mass/delete?' , 
+		preview: prefix + 'message/mass/preview?' ,
+		check: prefix + 'message/mass/get?'
+	} ,
+	menu: {
+		create: prefix + 'menu/create?' , 
+		query: prefix + 'menu/get?' , 
+		delete: prefix + 'menu/delete?' , 
+		current: prefix + 'get_current_selfmenu_info?'
 	}
 }
 
@@ -54,7 +68,7 @@ Wechat.prototype.fetchAccessToken = function() {
 			return Promise.resolve(this) ;
 		}
 	}
-	this.getAccessToken()
+	return this.getAccessToken()
 		.then(function(data){
 			try{
 				data = JSON.parse(data)
@@ -148,8 +162,6 @@ Wechat.prototype.uploadMaterial = function(type , material , permanent) {
 					options.formData = form ; 
 				}
 
-				console.log('上传时的url是:') ; 
-				console.log(url) ; 
 				request(options).then(function(response) {
 					var _data = response.body ; 
 					if (_data) {
@@ -614,7 +626,6 @@ Wechat.prototype.fetchUsersInfo = function(openIds , lang) {
 				} else {
 					options.url = api.user.fetch + 'access_token=' + data.access_token + '&openid=' + openIds + '&lang=' + lang ; 
 				}
-				console.log(options) ; 
 				request(options).then(function(response) {
 					var _data = response.body ; 
 					if (_data) {
@@ -661,14 +672,305 @@ Wechat.prototype.listUsers = function(openId) {
 	})
 }
 
-Wechat.prototype.reply = function() {
+Wechat.prototype.sendByTag = function(type , message , tagId) {
+	var that = this ; 
+	var tagUrl = api.mass.sendByTag ; 
+	var form = {
+		filter: {} , 
+		msgType: type
+	}
+	form[type] = message ; 
+	if (!groupId) {
+		form.filter.is_to_all = true ; 
+	}
+	else {
+		form.filter = {
+			is_to_all: false ,
+			tag_id: tagId
+		}
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = tagUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('sendByTag to Users fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.sendByOpenId = function(type , message , openIds) {
+	var that = this ; 
+	var openIdUrl = api.mass.sendByOpenId ; 
+	var form = {
+		touser: openIds , 
+		msgType: type
+	}
+	form[type] = message ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = openIdUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('sendByOpenID to Users fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+
+Wechat.prototype.delMass = function(msgId) {
+	var that = this ; 
+	var delUrl = api.mass.del ; 
+	var form = {
+		msg_id: msgId
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = delUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('delete mass fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.previewMass = function(type , message , openId) {
+	var that = this ; 
+	var previewUrl = api.mass.preview ; 
+	var form = {
+		touser: openId , 
+		msgType: type
+	}
+	form[type] = message ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = previewUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('preview mass fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.checkMass = function(msgId) {
+	var that = this ; 
+	var checkUrl = api.mass.check ; 
+	var form = {
+		msg_id: msgId
+	}
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = checkUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('check mass fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.createMenu = function(menu) {
+	var that = this ; 
+	var createUrl = api.menu.create ; 
+	var form = menu ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = createUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('Create menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.queryMenu = function() {
+	var that = this ; 
+	var queryUrl = api.menu.query ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = queryUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'GET' ,
+					url: url , 
+					json: true ,
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('query menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.deleteMenu = function() {
+	var that = this ; 
+	var deleteUrl = api.menu.delete ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = deleteUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'GET' ,
+					url: url , 
+					json: true ,
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('delete menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.currentMenu = function() {
+	var that = this ; 
+	var currentUrl = api.menu.current ; 
+	var form = menu ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = currentUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'GET' ,
+					url: url , 
+					json: true ,
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('current menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.reply = function () {
+	console.log('dsfasjkfkls')  ;
 	var content = this.body ; 
 	var message = this.weixin ; 
 	var xml = util.tpl(content , message) ; 
-	console.log('回复的xml是：') ;
-	console.log(xml) ; 
 	this.status = 200 ; 
 	this.type = 'application/xml' ; 
+	console.log('wolaile') ; 
 	this.body = xml ; 
 }
 module.exports = Wechat ; 

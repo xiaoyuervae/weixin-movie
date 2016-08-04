@@ -42,6 +42,7 @@ module.exports = function(config , handler){
 				// 把控制权交出去，交给业务层，让它决定接下来需要做什么
 				// 暂停这里，走向外层逻辑
 				yield handler.call(this , next) ; 
+
 				// 调用reply方法
 				wechat.reply.call(this) ; 
 			}
