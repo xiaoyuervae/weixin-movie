@@ -5,7 +5,9 @@ var fs = require('fs') ;
 var request = Promise.promisify(require('request')) ; 
 var util = require('./util') ; 
 var prefix = 'https://api.weixin.qq.com/cgi-bin/' ; 
+var mpPrefix = 'https://mp.weixin.qq.com/cgi-bin/' ; 
 var api = {
+	semantic: 'https://api.weixin.qq.com/semantic/semproxy/search?' , 
 	accesToken: prefix + 'token?grant_type=client_credential' , 
 	temporary: {
 		upload: prefix + 'media/upload?' , 
@@ -48,7 +50,14 @@ var api = {
 		query: prefix + 'menu/get?' , 
 		delete: prefix + 'menu/delete?' , 
 		current: prefix + 'get_current_selfmenu_info?'
-	}
+	} ,
+	qrcode: {
+		create: prefix + 'qrcode/create?' , 
+		show: mpPrefix + 'showqrcode?'
+	} , 
+	shortUrl:{
+		create: prefix + 'shorturl?'
+	} 
 }
 
 function Wechat(config){
@@ -962,6 +971,108 @@ Wechat.prototype.currentMenu = function() {
 			})
 	})
 }
+
+Wechat.prototype.createQrcode = function(qr) {
+	var that = this ; 
+	var createUrl = api.qrcode.create ; 
+	var form = qr ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = createUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('Create menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.showQrcode = function(ticket) {
+	return api.qrcode.show + '&ticket' + encodeURI(ticket) ; 
+}
+
+Wechat.prototype.createShortUrl = function(action , longUrl) {
+	var that = this ; 
+	action = action || 'long2short' ; 
+	var createUrl = api.shortUrl.create ; 
+	var form = {
+		action: action , 
+		long_url: longUrl
+	} ; 
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var url = createUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('Create menu fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+Wechat.prototype.semantic = function(form) {
+	var that = this ; 
+	var semanticUrl = api.semantic ; 
+	var form = form
+	return new Promise(function(resolve , reject) {
+		that
+			.fetchAccessToken()
+			.then(function(data) {
+				var appid = data.appID ; 
+				form.appid = appid ; 
+				var url = semanticUrl + '&access_token=' + data.access_token ; 
+				var options = {
+					method: 'POST' ,
+					url: url , 
+					json: true ,
+					body: form
+				} 
+				request(options).then(function(response) {
+					var _data = response.body ; 
+					if (_data) {
+						resolve(_data) ; 
+					}else {
+						throw new Error('semantic fails') ; 
+					}
+				})
+			})
+			.catch(function(err) {
+				reject(err) ; 
+			})
+	})
+}
+
+
 
 Wechat.prototype.reply = function () {
 	console.log('dsfasjkfkls')  ;
