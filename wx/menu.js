@@ -10,7 +10,7 @@ module.exports = {
 		'sub_button':[{
 			'name': '跳转URL' ,
 			'type': 'view' , 
-			'url': 'http://github.com'
+			'url': 'http://xrqutcxhlh.proxy.qqbrowser.cc/movie'
 		},{
 			'name': '扫码推送事件' ,
 			'type': 'scancode_push' , 

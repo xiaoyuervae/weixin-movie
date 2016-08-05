@@ -1,14 +1,3 @@
-var Koa = require('koa') ; 
-var config = require('./config') ; 
-var wechat = require('./wechat/g') ; 
-var reply = require('./wx/reply') ;
-var app = new Koa() ;
-var Wechat = require('./wechat/wechat') ;
-var ejs = require('ejs') ; 
-
-var heredoc = require('heredoc') ; 
-var crypto = require('crypto') ;
-var tpl = heredoc(function(){/*
 <!DOCTYPE html>
 <html>
 <head>
@@ -60,9 +49,7 @@ var tpl = heredoc(function(){/*
 		    }
 			}
 			var slides = {} ; 
-			$('#poster').on('tap' , function(){
-				wx.previewImage(slides) ; 
-			}) 
+			wx.previewImage(slides) ; 
 			wx.onMenuShareAppMessage(shareContent) ;
 			$('h1').on('tap' , function(){
 				if(!isRecording) {
@@ -86,16 +73,16 @@ var tpl = heredoc(function(){/*
 	              var result = res.translateResult ; 
 	              $.ajax({
 									type: 'get' , 
-									url: 'https://api.douban.com/v2/movie/search?q=' + result ,
+									url: 'https://api.douban.com/v2/movie/search/?q=' + result ,
 									dataType: 'jsonp' , 
 									jsonp: 'callback' , 
 									success: function(data) {
 										var subject = data.subjects[0] ; 
 										$('#title').html(subject.title) ; 
 										$('#year').html(subject.year) ; 
-										$('#director').html(subject.directors[0].name) ; 
+										$('#director').html(subject.directors[0]) ; 
 										$('#poster').html('<img src="'+subject.images.large+'" />')
-										console.log(subject.images.large) ; 
+
 										shareContent.title = '我搜出来了' + subject.title ; 
 										shareContent.link = subject.images.large ;
 										shareContent.imgUrl = subject.images.large
@@ -111,6 +98,7 @@ var tpl = heredoc(function(){/*
 										})
 
 										wx.previewImage(slides) ; 
+
 									}
 	              })
 	            }
@@ -122,54 +110,3 @@ var tpl = heredoc(function(){/*
 	</script>
 </body>
 </html>
-*/}) ; 
-var createNonce = function() {
-	return Math.random().toString(36).substr(2 , 15) ; 
-}
-var createTimestamp = function() {
-	return parseInt(new Date().getTime() / 1000 , 10) + '' ;
-}
-var _sign = function ticket(noncestr , ticket,timestamp , url) {
-	var params = [
-		'noncestr=' + noncestr , 
-		'jsapi_ticket=' + ticket , 
-		'timestamp=' + timestamp , 
-		'url=' + url
-	]
-
-	var str = params.sort().join('&') ; 
-	console.log(str);
-
-	var shasum = crypto.createHash('sha1') ; 
-	shasum.update(str) ;
-	return shasum.digest('hex') ;
-}
-function sign(ticket , url) {
-	var noncestr = createNonce() ; 
-	var timestamp = createTimestamp() ; 
-	url = url.replace(':8000' , '') ; 
-	var signature = _sign(noncestr , ticket,timestamp , url) ;
-	return {
-		noncestr: noncestr ,
-		timestamp: timestamp , 
-		signature: signature
-	}
-}
-app.use(function *(next) {
-	if (this.url.indexOf('/movie') > -1) {
-		var wechatApi = new Wechat(config) ; 
-		var data = yield wechatApi.fetchAccessToken() ; 
-		var access_token = data.access_token ; 
-		var ticketData = yield wechatApi.fetchApiTicket(access_token) ; 
-		var ticket = ticketData.ticket ; 
-		var url = this.href ; 
-		var params = sign(ticket , url) ;
-		console.log(params);
-		this.body = ejs.render(tpl , params) ; 
-		return next ;
-	}
-	yield next ;
-})
-app.use(wechat(config , reply.reply)) ;
-app.listen(3000) ; 
-console.log('app is listening at 3000') ;
